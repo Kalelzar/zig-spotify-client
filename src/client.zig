@@ -84,12 +84,13 @@ pub fn getPlaybackState(self: *Client, allocator: std.mem.Allocator) !?std.json.
 }
 
 const Auth = struct {
-    clock_skew: i32 = 30,
+    clock_skew: i64 = 30,
     state: []const u8,
     base_uri: []const u8 = "127.0.0.1",
     route: []const u8 = "/callback",
     port: u16 = 9999,
     client: *Client,
+    last_refresh: i64 = 0,
 
     info: ?Info = null,
 
@@ -195,8 +196,8 @@ const Auth = struct {
             }
         };
 
-        if (info.expires_in < std.time.timestamp() + self.clock_skew) {
-            std.log.info("The token has 'expired'. We need to refresh it.", .{});
+        if (info.expires_in + self.last_refresh < std.time.timestamp() - self.clock_skew) {
+            std.log.info("The token has 'expired'. We need to refresh it. {}", .{info.expires_in});
             try self.refresh(allocator);
         }
 
@@ -231,6 +232,7 @@ const Auth = struct {
             self.info.? = info;
             self.info.?.refresh_token = try allocator.dupe(u8, refresh_token);
         }
+        self.last_refresh = std.time.timestamp();
     }
 
     fn basic_header(self: *const Auth, allocator: std.mem.Allocator) ![]const u8 {
@@ -280,6 +282,7 @@ const Auth = struct {
             self.info.?.deinit(allocator);
         }
         self.info = new_info;
+        self.last_refresh = std.time.timestamp();
     }
 
     fn codeExchange(self: *Auth, allocator: std.mem.Allocator, code: []const u8, redirect_uri: []const u8) !Info {
