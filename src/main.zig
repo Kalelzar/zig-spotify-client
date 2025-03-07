@@ -20,7 +20,7 @@ pub fn main() !void {
         var config = try std.json.parseFromTokenSource(Settings, allocator, &json_reader, .{});
         defer config.deinit();
 
-        var client = try spotify.client.init(
+        var client = try spotify.Client.init(
             allocator,
             config.value.id,
             config.value.secret,
@@ -40,21 +40,25 @@ pub fn main() !void {
         );
 
         const state = try client.getPlaybackState(allocator);
-        defer state.deinit();
+        if (state) |s| {
+            defer s.deinit();
 
-        const val = try std.json.stringifyAlloc(allocator, state.value, .{ .whitespace = .indent_2 });
-        defer allocator.free(val);
+            const val = try std.json.stringifyAlloc(allocator, s.value, .{ .whitespace = .indent_2 });
+            defer allocator.free(val);
 
-        std.log.info("{s}", .{val});
+            std.log.info("{s}", .{val});
 
-        config.value.refresh_token = client.auth.info.?.refresh_token;
-        try file.seekTo(0);
-        const file_writer = file.writer();
-        try std.json.stringify(
-            config.value,
-            .{ .whitespace = .indent_2 },
-            file_writer,
-        );
+            config.value.refresh_token = client.auth.info.?.refresh_token;
+            try file.seekTo(0);
+            const file_writer = file.writer();
+            try std.json.stringify(
+                config.value,
+                .{ .whitespace = .indent_2 },
+                file_writer,
+            );
+        } else {
+            std.log.info("NO PLAYBACK DETECTED", .{});
+        }
     }
     if (gpa.detectLeaks()) {
         @panic("MEMORY LEAK DETECTED");

@@ -43,7 +43,7 @@ pub fn deinit(self: *Client, allocator: std.mem.Allocator) void {
     self.auth.deinit(allocator);
 }
 
-pub fn getPlaybackState(self: *Client, allocator: std.mem.Allocator) !std.json.Parsed(playback.State) {
+pub fn getPlaybackState(self: *Client, allocator: std.mem.Allocator) !?std.json.Parsed(playback.State) {
     //FIXME: Validate scopes
 
     var server_headers: [4096]u8 = undefined;
@@ -70,15 +70,17 @@ pub fn getPlaybackState(self: *Client, allocator: std.mem.Allocator) !std.json.P
     var json_reader = std.json.reader(allocator, request_reader);
     defer json_reader.deinit();
 
-    if (request.response.status != .ok) {
-        const out = try std.json.parseFromTokenSource(ErrorResponse, allocator, &json_reader, .{});
-        defer out.deinit();
-        std.log.err("Failed to retrieve current player state: ({}) {s}", .{ out.value.@"error".status, out.value.@"error".message });
-        return error.BadRequest;
+    if (request.response.status == .ok) {
+        const out = try std.json.parseFromTokenSource(playback.State, allocator, &json_reader, .{ .ignore_unknown_fields = true });
+        return out;
+    } else if (request.response.status == .no_content) {
+        return null;
     }
 
-    const out = try std.json.parseFromTokenSource(playback.State, allocator, &json_reader, .{ .ignore_unknown_fields = true });
-    return out;
+    const out = try std.json.parseFromTokenSource(ErrorResponse, allocator, &json_reader, .{});
+    defer out.deinit();
+    std.log.err("Failed to retrieve current player state: ({}) {s}", .{ out.value.@"error".status, out.value.@"error".message });
+    return error.BadRequest;
 }
 
 const Auth = struct {

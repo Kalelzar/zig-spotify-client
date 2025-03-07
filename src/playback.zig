@@ -114,6 +114,9 @@ pub const ExternalId = struct {
 };
 
 pub const Track = meta.MergeStructs(ItemBase, struct {
+    album: Album,
+    artists: []const SimplifiedArtist,
+    preview_url: ?[]const u8,
     available_markets: ?[]const []const u8 = null,
     disc_number: i8,
     external_ids: ExternalId,
