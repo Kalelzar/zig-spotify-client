@@ -196,7 +196,7 @@ const Auth = struct {
             }
         };
 
-        if (info.expires_in + self.last_refresh < std.time.timestamp() - self.clock_skew) {
+        if (info.expires_in + self.last_refresh < std.time.timestamp() + self.clock_skew) {
             std.log.info("The token has 'expired'. We need to refresh it. {}", .{info.expires_in});
             try self.refresh(allocator);
         }
