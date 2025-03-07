@@ -1,0 +1,8 @@
+#+TITLE: README
+#+AUTHOR: Kalelzar
+
+# zig-spotify-client
+
+A minimal http client for the Spotify API.
+
+Very work-in-progress.
