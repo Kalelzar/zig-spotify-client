@@ -186,7 +186,6 @@ pub const Item = union(ItemType) {
 
     pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
         const parsed = try std.json.innerParse(std.json.Value, allocator, source, options);
-        std.log.debug("1", .{});
         if (parsed != .object) {
             return error.UnexpectedToken;
         }

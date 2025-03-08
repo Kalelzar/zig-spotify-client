@@ -38,7 +38,8 @@ pub fn main() !void {
                 .scopes = "user-read-playback-state",
             },
         );
-        _ = try client.getPlaybackState(allocator);
+        const s1 = try client.getPlaybackState(allocator);
+        if (s1) |ss| ss.deinit();
         const state = try client.getPlaybackState(allocator);
         if (state) |s| {
             defer s.deinit();
